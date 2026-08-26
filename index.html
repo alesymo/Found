@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validação de Found · Mercado Livre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #f6f7fb;
+    --panel: #ffffff;
+    --panel-2: #eef0f6;
+    --line: #e2e5ef;
+    --line-soft: #edeff5;
+    --ink: #15182b;
+    --muted: #6b7086;
+    --muted-2: #9aa0b4;
+    --yellow: #fee000;
+    --gold-text: #9c7a00;
+    --blue: #3483fa;
+    --green: #00a650;
+    --danger: #e0393e;
+    --mono: 'IBM Plex Mono', Consolas, monospace;
+    --disp: 'Space Grotesk', var(--sans);
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 480px at 100% -8%, rgba(254,224,0,0.12) 0%, transparent 55%),
+      radial-gradient(700px 420px at -5% 105%, rgba(52,131,250,0.07) 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    padding:0 0 64px;
+    min-height:100vh;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px;}
+
+  .topbar{
+    border-bottom:1px solid var(--line-soft);
+    background:linear-gradient(180deg, rgba(254,224,0,0.03), transparent);
+  }
+  .topbar-inner{
+    max-width:980px;margin:0 auto;padding:18px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;
+  }
+  .brandmark{display:flex;align-items:center;gap:10px;}
+  .brandmark .chip{
+    width:30px;height:30px;border-radius:8px;
+    background:var(--yellow);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:700;font-size:14px;color:#161200;
+    box-shadow:0 0 0 1px rgba(254,224,0,0.55), 0 6px 18px rgba(254,224,0,0.22);
+  }
+  .brandmark .lock{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    letter-spacing:.14em;text-transform:uppercase;
+  }
+  .status-pill{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    border:1px solid var(--line);padding:6px 12px;border-radius:100px;
+    white-space:nowrap;display:flex;align-items:center;gap:7px;
+  }
+  .status-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-2);}
+  .status-pill.on .dot{background:var(--green);box-shadow:0 0 8px rgba(0,166,80,.7);}
+
+  header.hero{padding:40px 0 28px;}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold-text);margin:0 0 10px;display:flex;align-items:center;gap:8px;
+  }
+  .eyebrow::before{content:'';width:16px;height:1px;background:var(--gold-text);display:inline-block;}
+  h1{
+    margin:0;font-family:var(--disp);font-size:36px;font-weight:700;letter-spacing:-0.01em;
+    line-height:1.1;
+  }
+  .subtitle{color:var(--muted);font-size:14.5px;margin-top:10px;max-width:560px;line-height:1.6;}
+
+  .tabs{
+    display:flex;gap:4px;margin-top:28px;border-bottom:1px solid var(--line-soft);overflow-x:auto;
+  }
+  .tab-btn{
+    font-family:var(--sans);font-weight:600;font-size:13.5px;color:var(--muted);
+    background:transparent;border:none;padding:12px 18px;cursor:pointer;
+    border-bottom:2px solid transparent;transition:.15s all;white-space:nowrap;
+  }
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{color:var(--gold-text);border-bottom-color:var(--yellow);}
+  .tab-panel{display:none;padding-top:28px;}
+  .tab-panel.active{display:block;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:760px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:22px;position:relative;overflow:hidden;
+    box-shadow:0 1px 2px rgba(21,24,43,0.04), 0 8px 24px rgba(21,24,43,0.05);
+  }
+  .card::before{
+    content:attr(data-tag);position:absolute;top:0;right:0;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    color:#161200;background:var(--yellow);padding:5px 12px;border-bottom-left-radius:10px;
+    font-weight:600;
+  }
+  .card h2{font-family:var(--disp);font-size:17px;margin:0 0 4px;font-weight:600;}
+  .card .dest{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:0 0 14px;word-break:break-all;}
+  
+  .report-status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 11px; padding: 6px 10px; border-radius: 6px;
+    background: var(--bg-2); border: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .report-status-bar .badge {
+    font-weight: 600; padding: 2px 6px; border-radius: 4px;
+  }
+  .badge.disponivel { color: var(--green); background: rgba(0,166,80,0.1); }
+  .badge.ocupado { color: var(--danger); background: rgba(224,57,62,0.1); }
+
+  .drop{
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 100%; border: 1.5px dashed var(--line); border-radius: 10px;
+    padding: 24px 16px; text-align: center; cursor: pointer; transition: .15s all;
+    background: var(--bg-2);
+  }
+  .drop:hover, .drop.drag{border-color:var(--blue);background:#eaf1ff;}
+  .drop input{display:none;}
+  .drop .icon{
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px; font-size: 15px; color: var(--blue);
+  }
+  .drop .main{display: block; font-size:13px;color:var(--ink);font-weight:500;}
+
+  .result{
+    margin-top:16px;font-family:var(--mono);font-size:12px;padding:12px 14px;border-radius:8px;
+    border:1px solid var(--line);display:none;line-height:1.65;
+  }
+  .result.show{display:block;}
+  .result.ok{border-color:rgba(0,166,80,.5);color:var(--green);background:rgba(0,166,80,.06);}
+  .result.err{border-color:rgba(255,90,95,.5);color:var(--danger);background:rgba(255,90,95,.06);}
+  .result.busy{border-color:rgba(52,131,250,.5);color:var(--blue);background:rgba(52,131,250,.06);}
+
+  .script-row{
+    margin-top:16px;display:flex;align-items:center;justify-content:space-between;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+  }
+  .script-row .label{font-size:12.5px;color:var(--muted);font-weight:500;}
+  .script-row .label small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--muted-2);margin-top:2px;}
+  .copy-btn, .primary-btn{
+    font-family:var(--sans);font-weight:600;font-size:12px;
+    background:var(--yellow);color:#161200;border:none;border-radius:6px;
+    padding:8px 14px;cursor:pointer;transition:.15s all;white-space:nowrap;
+  }
+  .copy-btn:hover, .primary-btn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .copy-btn.done{background:var(--green);color:#04150a;}
+
+  .trace-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;
+    box-shadow:0 1px 2px rgba(21,24,43,0.04), 0 8px 24px rgba(21,24,43,0.05);
+  }
+  .trace-card h2{font-family:var(--disp);font-size:18px;margin:0 0 6px;font-weight:600;}
+  .trace-card .desc{color:var(--muted);font-size:13px;margin:0 0 18px;line-height:1.6;max-width:600px;}
+  textarea#pasteOrders{
+    width:100%;min-height:120px;resize:vertical;background:var(--bg-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:14px;font-family:var(--mono);font-size:13px;
+    line-height:1.6;outline:none;transition:.15s border-color;
+  }
+  textarea#pasteOrders:focus{border-color:var(--blue);}
+  .trace-actions{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap;}
+  .primary-btn{background:var(--blue);color:#fff;font-size:13px;padding:10px 18px;border-radius:7px;}
+  .trace-count{font-family:var(--mono);font-size:12px;color:var(--muted);}
+
+  .order-list{margin-top:22px;display:flex;flex-direction:column;gap:8px;}
+  .order-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+  }
+  .order-row .oid{font-family:var(--mono);font-size:13px;color:var(--ink);}
+  .order-row .oid span{color:var(--muted-2);margin-right:8px;font-size:11px;}
+  .open-btn{
+    font-family:var(--sans);font-weight:600;font-size:12px;background:transparent;color:var(--blue);
+    border:1px solid rgba(52,131,250,.4);border-radius:6px;padding:7px 13px;cursor:pointer;
+    transition:.15s all;white-space:nowrap;
+  }
+  .open-btn:hover{background:rgba(52,131,250,.12);border-color:var(--blue);}
+
+  footer{
+    margin-top:52px;padding-top:22px;border-top:1px solid var(--line-soft);
+    display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+    text-align:center;color:var(--muted-2);font-size:11.5px;font-family:var(--mono);
+  }
+  footer .yellow-dot{color:var(--gold-text);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brandmark">
+      <div class="chip">ML</div>
+      <span class="lock">ICQA · BRSP04</span>
+    </div>
+    <span class="status-pill" id="connStatus"><span class="dot"></span><span id="connText">API não configurada</span></span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Painel operacional</p>
+    <h1>Validação de Found</h1>
+    <p class="subtitle">Lance os pedidos extraídos do CSV, consulte o rastreio ou faça o registro e controle de Founds Tratados.</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="lancamento">Lançamento de Pedidos</button>
+    <button class="tab-btn" data-tab="rastreio">Rastreio de Pedidos</button>
+    <button class="tab-btn" data-tab="founds">Founds Tratados</button>
+  </nav>
+
+  <!-- TAB: LANÇAMENTO -->
+  <section class="tab-panel active" id="tab-lancamento">
+    <div class="grid">
+      <!-- REPORT 1 -->
+      <div class="card" data-tag="REPORT 1">
+        <h2>Report (1)</h2>
+        <p class="dest"></p>
+        <div class="report-status-bar">
+          <span>Status de Uso:</span>
+          <span class="badge disponivel" id="statusBadge1">Verificando...</span>
+        </div>
+        <label class="drop" id="drop1">
+          <input type="file" id="file1" accept=".csv">
+          <span class="icon">⇪</span>
+          <span class="main">Clique ou arraste o CSV aqui</span>
+        </label>
+        <div class="result" id="result1"></div>
+        <div class="script-row">
+          <div class="label">Prompt de validação<small>BRSP04 · Status dos Pedidos</small></div>
+          <button class="copy-btn" id="copy1">Copiar</button>
+        </div>
+      </div>
+
+      <!-- REPORT 2 -->
+      <div class="card" data-tag="REPORT 2">
+        <h2>Report (2)</h2>
+        <p class="dest"></p>
+        <div class="report-status-bar">
+          <span>Status de Uso:</span>
+          <span class="badge disponivel" id="statusBadge2">Verificando...</span>
+        </div>
+        <label class="drop" id="drop2">
+          <input type="file" id="file2" accept=".csv">
+          <span class="icon">⇪</span>
+          <span class="main">Clique ou arraste o CSV aqui</span>
+        </label>
+        <div class="result" id="result2"></div>
+        <div class="script-row">
+          <div class="label">Prompt de validação<small>BRSP04 · Status dos Pedidos</small></div>
+          <button class="copy-btn" id="copy2">Copiar</button>
+        </div>
+      </div>
+
+      <!-- REPORT 3 -->
+      <div class="card" data-tag="REPORT 3">
+        <h2>Report (3)</h2>
+        <p class="dest"></p>
+        <div class="report-status-bar">
+          <span>Status de Uso:</span>
+          <span class="badge disponivel" id="statusBadge3">Verificando...</span>
+        </div>
+        <label class="drop" id="drop3">
+          <input type="file" id="file3" accept=".csv">
+          <span class="icon">⇪</span>
+          <span class="main">Clique ou arraste o CSV aqui</span>
+        </label>
+        <div class="result" id="result3"></div>
+        <div class="script-row">
+          <div class="label">Prompt de validação<small>BRSP04 · Status dos Pedidos</small></div>
+          <button class="copy-btn" id="copy3">Copiar</button>
+        </div>
+      </div>
+
+      <!-- REPORT 4 -->
+      <div class="card" data-tag="REPORT 4">
+        <h2>Report (4)</h2>
+        <p class="dest"></p>
+        <div class="report-status-bar">
+          <span>Status de Uso:</span>
+          <span class="badge disponivel" id="statusBadge4">Verificando...</span>
+        </div>
+        <label class="drop" id="drop4">
+          <input type="file" id="file4" accept=".csv">
+          <span class="icon">⇪</span>
+          <span class="main">Clique ou arraste o CSV aqui</span>
+        </label>
+        <div class="result" id="result4"></div>
+        <div class="script-row">
+          <div class="label">Prompt de validação<small>BRSP04 · Status dos Pedidos</small></div>
+          <button class="copy-btn" id="copy4">Copiar</button>
+        </div>
+      </div>
+
+      <!-- REPORT 5 -->
+      <div class="card" data-tag="REPORT 5">
+        <h2>Report (5)</h2>
+        <p class="dest"></p>
+        <div class="report-status-bar">
+          <span>Status de Uso:</span>
+          <span class="badge disponivel" id="statusBadge5">Verificando...</span>
+        </div>
+        <label class="drop" id="drop5">
+          <input type="file" id="file5" accept=".csv">
+          <span class="icon">⇪</span>
+          <span class="main">Clique ou arraste o CSV aqui</span>
+        </label>
+        <div class="result" id="result5"></div>
+        <div class="script-row">
+          <div class="label">Prompt de validação<small>BRSP04 · Status dos Pedidos</small></div>
+          <button class="copy-btn" id="copy5">Copiar</button>
+        </div>
+      </div>
+
+      <!-- REPORT 6 -->
+      <div class="card" data-tag="REPORT 6">
+        <h2>Report (6)</h2>
+        <p class="dest"></p>
+        <div class="report-status-bar">
+          <span>Status de Uso:</span>
+          <span class="badge disponivel" id="statusBadge6">Verificando...</span>
+        </div>
+        <label class="drop" id="drop6">
+          <input type="file" id="file6" accept=".csv">
+          <span class="icon">⇪</span>
+          <span class="main">Clique ou arraste o CSV aqui</span>
+        </label>
+        <div class="result" id="result6"></div>
+        <div class="script-row">
+          <div class="label">Prompt de validação<small>BRSP04 · Status dos Pedidos</small></div>
+          <button class="copy-btn" id="copy6">Copiar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: RASTREIO -->
+  <section class="tab-panel" id="tab-rastreio">
+    <div class="trace-card">
+      <h2>Rastreio de Pedidos</h2>
+      <p class="desc">Cole abaixo os números dos pedidos (um por linha, separados por vírgula ou espaço).</p>
+      <textarea id="pasteOrders" placeholder="Cole aqui os números dos pedidos…&#10;Ex: 47818518693, 47826905150"></textarea>
+      <div class="trace-actions">
+        <button class="primary-btn" id="processOrders">Reconhecer e abrir pedidos</button>
+        <button class="copy-btn" id="clearOrdersBtn" style="background:var(--panel-2); color:var(--ink); border:1px solid var(--line);">Limpar</button>
+        <span class="trace-count" id="traceCount"></span>
+      </div>
+      <p class="desc" style="margin:10px 0 0;font-size:11.5px;">Se o navegador bloquear as abas, permita pop-ups ou use o botão "Abrir Detalhes".</p>
+      <div class="order-list" id="orderList"></div>
+    </div>
+  </section>
+
+  <!-- TAB: FOUNDS TRATADOS -->
+  <section class="tab-panel" id="tab-founds">
+    <div class="card" style="margin-bottom: 20px;">
+      <h2>Identificação do Operador</h2>
+      <p class="dest">Selecione o PS responsável para iniciar a bipagem das MeliSKUs.</p>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 14px;">
+        <div style="flex: 1; min-width: 240px;">
+          <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; font-family: var(--mono);">PS RESPONSÁVEL</label>
+          <select id="psSelect" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-2); font-family: var(--sans); font-size: 13.5px; color: var(--ink); outline: none;">
+            <option value="">Carregando lista de PS da base...</option>
+          </select>
+        </div>
+        <div style="width: 200px;">
+          <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; font-family: var(--mono);">TURNO</label>
+          <input type="text" id="psTurno" readonly placeholder="Selecione o PS" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); font-family: var(--mono); font-size: 13px; color: var(--muted);">
+        </div>
+      </div>
+    </div>
+
+    <!-- CORES INVERTIDAS COM CAMPO DE QUANTIDADE -->
+    <div class="grid" style="margin-bottom: 24px;">
+      <div class="card" data-tag="STATUS: ENVIADO">
+        <h2 style="color: var(--danger);">Enviado para Found</h2>
+        <p class="dest">Bipe ou digite a MeliSKU e pressione Enter</p>
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <input type="text" id="scanEnviado" placeholder="Bipar MeliSKU..." style="flex: 1; padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--danger); background: rgba(224,57,62,0.04); font-family: var(--mono); font-size: 14px; outline: none;">
+          <input type="number" id="qtdEnviado" value="1" min="1" title="Quantidade" style="width: 80px; padding: 12px 10px; border-radius: 8px; border: 1.5px solid var(--danger); background: rgba(224,57,62,0.04); font-family: var(--mono); font-size: 14px; text-align: center; outline: none;">
+        </div>
+        <div id="msgEnviado" style="margin-top: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--danger); min-height: 18px;"></div>
+      </div>
+
+      <div class="card" data-tag="STATUS: NÃO ENVIADO">
+        <h2 style="color: var(--green);">Não Enviado Para Found</h2>
+        <p class="dest">Bipe ou digite a MeliSKU e pressione Enter</p>
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <input type="text" id="scanNaoEnviado" placeholder="Bipar MeliSKU..." style="flex: 1; padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--green); background: rgba(0,166,80,0.04); font-family: var(--mono); font-size: 14px; outline: none;">
+          <input type="number" id="qtdNaoEnviado" value="1" min="1" title="Quantidade" style="width: 80px; padding: 12px 10px; border-radius: 8px; border: 1.5px solid var(--green); background: rgba(0,166,80,0.04); font-family: var(--mono); font-size: 14px; text-align: center; outline: none;">
+        </div>
+        <div id="msgNaoEnviado" style="margin-top: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--green); min-height: 18px;"></div>
+      </div>
+    </div>
+
+    <div class="trace-card">
+      <h2>Indicadores e Histórico de Tratativas</h2>
+      <p class="desc">Filtre os dados por período, turno e PS para visualizar métricas detalhadas (Sincronizado direto com a Planilha).</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">DATA INÍCIO</label>
+          <input type="date" id="filterStart" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-2); font-family: var(--mono); font-size: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">DATA FIM</label>
+          <input type="date" id="filterEnd" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-2); font-family: var(--mono); font-size: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">TURNO</label>
+          <select id="filterTurno" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-2); font-family: var(--sans); font-size: 12px;">
+            <option value="">Todos os Turnos</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">PS RESPONSÁVEL</label>
+          <select id="filterPs" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-2); font-family: var(--sans); font-size: 12px;">
+            <option value="">Todos os PS</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <button class="copy-btn" id="clearFiltersBtn" style="background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); font-size: 11.5px; padding: 6px 12px;">Limpar Filtros</button>
+      </div>
+
+      <!-- KPIS COM CORES CORRESPONDENTES -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px;">
+        <div style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; text-align: center;">
+          <div style="font-size: 11px; color: var(--muted); font-family: var(--mono); text-transform: uppercase;">Total Tratados</div>
+          <div id="kpiTotal" style="font-size: 24px; font-weight: 700; font-family: var(--disp); margin-top: 4px; color: var(--ink);">0</div>
+        </div>
+        <div style="background: rgba(224,57,62,0.06); border: 1px solid rgba(224,57,62,0.3); border-radius: 8px; padding: 14px; text-align: center;">
+          <div style="font-size: 11px; color: var(--danger); font-family: var(--mono); text-transform: uppercase;">Enviados</div>
+          <div id="kpiEnviados" style="font-size: 24px; font-weight: 700; font-family: var(--disp); margin-top: 4px; color: var(--danger);">0</div>
+        </div>
+        <div style="background: rgba(0,166,80,0.06); border: 1px solid rgba(0,166,80,0.3); border-radius: 8px; padding: 14px; text-align: center;">
+          <div style="font-size: 11px; color: var(--green); font-family: var(--mono); text-transform: uppercase;">Não Enviados</div>
+          <div id="kpiNaoEnviados" style="font-size: 24px; font-weight: 700; font-family: var(--disp); margin-top: 4px; color: var(--green);">0</div>
+        </div>
+      </div>
+
+      <!-- TABELA DE RESUMO POR PS -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-family: var(--disp); font-size: 14px; margin: 0 0 10px 0; color: var(--ink);">Resumo por PS Responsável</h3>
+        <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: var(--panel-2); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px; color: var(--muted); position: sticky; top: 0;">
+                <th style="padding: 8px 10px;">PS Responsável</th>
+                <th style="padding: 8px 10px; text-align: center; color: var(--danger);">Enviados</th>
+                <th style="padding: 8px 10px; text-align: center; color: var(--green);">Não Enviados</th>
+                <th style="padding: 8px 10px; text-align: center;">Total</th>
+              </tr>
+            </thead>
+            <tbody id="psSummaryTableBody">
+              <tr><td colspan="4" style="padding: 15px; text-align: center; color: var(--muted); font-family: var(--mono);">Nenhum dado encontrado.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GRÁFICOS: DIA, SEMANA E MÊS -->
+      <div style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+        <h3 style="font-family: var(--disp); font-size: 14px; margin: 0 0 14px 0; color: var(--ink);">Tratativas por Dia</h3>
+        <div style="position: relative; height: 200px; width: 100%;">
+          <canvas id="chartFounds"></canvas>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px;">
+          <h3 style="font-family: var(--disp); font-size: 14px; margin: 0 0 14px 0; color: var(--ink);">Tratativas por Semana</h3>
+          <div style="position: relative; height: 200px; width: 100%;">
+            <canvas id="chartFoundsWeek"></canvas>
+          </div>
+        </div>
+        <div style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px;">
+          <h3 style="font-family: var(--disp); font-size: 14px; margin: 0 0 14px 0; color: var(--ink);">Tratativas por Mês</h3>
+          <div style="position: relative; height: 200px; width: 100%;">
+            <canvas id="chartFoundsMonth"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="font-family: var(--disp); font-size: 16px; margin: 0; color: var(--ink);">Histórico de Tratativas</h3>
+        <button class="primary-btn" id="exportCsvBtn" style="font-size: 12px; padding: 8px 14px; background: var(--green); color: #fff;">Exportar CSV</button>
+      </div>
+
+      <div style="max-height: 350px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+          <thead>
+            <tr style="background: var(--panel-2); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--muted); position: sticky; top: 0;">
+              <th style="padding: 10px 12px;">Data/Hora</th>
+              <th style="padding: 10px 12px;">MeliSKU</th>
+              <th style="padding: 10px 12px;">Status</th>
+              <th style="padding: 10px 12px;">PS Responsável</th>
+              <th style="padding: 10px 12px;">Turno</th>
+              <th style="padding: 10px 12px; text-align: center;">Qtd</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--muted); font-family: var(--mono);">Carregando histórico...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Mercado Livre</span>
+    <span class="yellow-dot">·</span>
+    <span>Desenvolvido por José Álef Veríssimo Ribeiro</span>
+    <span class="yellow-dot">·</span>
+    <span>ICQA © 2026</span>
+  </footer>
+</div>
+
+<script>
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzC41LuqdU_WxVnEt-IZdAHw7GeGuAY_f4ixkRdByH7ogycW6SIChnV8NokCMFhBAAN9Q/exec';
+
+const connPill = document.getElementById('connStatus');
+const connText = document.getElementById('connText');
+if (WEB_APP_URL.startsWith('http')) {
+  connPill.classList.add('on');
+  connText.textContent = 'API conectada';
+} else {
+  connText.textContent = 'API não configurada';
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+function setupUploader(sheetKey, dropId, fileId, resultId) {
+  const drop = document.getElementById(dropId);
+  const input = document.getElementById(fileId);
+  const resultBox = document.getElementById(resultId);
+
+  ['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', e => { if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+  input.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+  function showResult(cls, html) {
+    resultBox.className = 'result show ' + cls;
+    resultBox.innerHTML = html;
+  }
+
+  function handleFile(file) {
+    if (!WEB_APP_URL.startsWith('http')) {
+      showResult('err', 'Configure a WEB_APP_URL no início do script antes de enviar.');
+      return;
+    }
+    showResult('busy', 'Lendo e processando o CSV…');
+
+    Papa.parse(file, {
+      skipEmptyLines: true,
+      complete: function(res) {
+        const rows = res.data;
+        if (!rows.length) { showResult('err', 'CSV vazio ou ilegível.'); return; }
+
+        const header = rows[0];
+        let orderColIdx = 2;
+        let skuColIdx = 3;
+
+        if (header) {
+          header.forEach((h, idx) => {
+            const hText = String(h).trim().toLowerCase().replace(/\s+/g,'');
+            if (hText.includes('order') || hText.includes('is/orderid')) orderColIdx = idx;
+            if (hText.includes('sku') || hText.includes('codigo') || hText.includes('melisku')) skuColIdx = idx;
+          });
+        }
+
+        const firstLooksLikeHeader = header.some(h => /order|is\/order|sku|codigo/i.test(String(h)));
+        const dataRows = firstLooksLikeHeader ? rows.slice(1) : rows;
+
+        const orders = [];
+        const skusFound = new Set();
+
+        dataRows.forEach(row => {
+          const rawOrder = row[orderColIdx];
+          const rawSku = row[skuColIdx];
+
+          if (rawOrder) {
+            const match = String(rawOrder).match(/\d+/g);
+            if (match) orders.push(match.join(''));
+          }
+
+          if (rawSku) {
+            const cleanedSku = String(rawSku).trim();
+            if (cleanedSku) skusFound.add(cleanedSku);
+          }
+        });
+
+        if (!orders.length) {
+          showResult('err', 'Nenhum número de pedido encontrado na coluna C.');
+          return;
+        }
+
+        const uniqueSkus = [...skusFound];
+        sendToSheet(orders, uniqueSkus);
+      },
+      error: function(err) { showResult('err', 'Erro ao ler o CSV: ' + err.message); }
+    });
+  }
+
+  function sendToSheet(orders, skus) {
+    showResult('busy', 'Enviando ' + orders.length + ' pedido(s) para a planilha…');
+    const body = new URLSearchParams();
+    body.set('sheet', sheetKey);
+    body.set('orders', JSON.stringify(orders));
+    body.set('user', document.getElementById('psSelect').value || 'Operador');
+
+    fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        let skuInfo = skus.length > 0 ? `<br><strong>MeliSKU:</strong> ${skus[0]}` : '';
+        showResult('ok', `✓ ${data.count} pedido(s) lançados em <strong>${data.tab}</strong>.${skuInfo}<br><br>Copie o Prompt de Validação abaixo.`);
+        checkReportStatuses();
+      } else {
+        showResult('err', 'Falha ao gravar: ' + (data.error || 'erro desconhecido'));
+      }
+    })
+    .catch(err => { showResult('err', 'Erro de conexão com a API: ' + err.message); });
+  }
+}
+
+for(let i = 1; i <= 6; i++) {
+  setupUploader(String(i), 'drop' + i, 'file' + i, 'result' + i);
+}
+
+const VALIDATION_SCRIPTS = {
+  copy1: 'Analise todos os pedidos em BRSP04 que constam na planilha atualizada e valide quais estão cancelados, pendentes para envio, enviados e/ou já entregues. Especifique quais são os números dos pedidos com status: pendentes para envio e cancelados.\nhttps://docs.google.com/spreadsheets/d/1foKcnDYjgJqkQXcyit0ysxMSie_i657c1MlWRHublaM/edit?gid=0#gid=0',
+  copy2: 'Analise todos os pedidos em BRSP04 que constam na planilha atualizada  e valide quais estão cancelados, pendentes para envio, enviados e/ou já entregues. Especifique quais são os números dos pedidos com status: pendentes para envio e cancelados.\nhttps://docs.google.com/spreadsheets/d/13qSlwvGWmh-2EkaLE7oIHnENn22mA1PvcNFzl6IqAXo/edit?gid=0#gid=0',
+  copy3: 'Analise todos os pedidos em BRSP04 que constam na planilha atualizada e valide quais estão cancelados, pendentes para envio, enviados e/ou já entregues. Especifique quais são os números dos pedidos com status: pendentes para envio e cancelados.\nhttps://docs.google.com/spreadsheets/d/1SIY8ARPyXrb23x9fbHXrXWnhi9FSI2AJhPpTdEqzFS0/edit?gid=0#gid=0',
+  copy4: 'Analise todos os pedidos em BRSP04 que constam na planilha atualizada e valide quais estão cancelados, pendentes para envio, enviados e/ou já entregues. Especifique quais são os números dos pedidos com status: pendentes para envio e cancelados.\nhttps://docs.google.com/spreadsheets/d/1LwjnAAmjBhM2dPnprOZTf-NmCw9FBWFQ8sQbhhQrjZE/edit?gid=0#gid=0',
+  copy5: 'Analise todos os pedidos em BRSP04 que constam na planilha atualizada e valide quais estão cancelados, pendentes para envio, enviados e/ou já entregues. Especifique quais são os números dos pedidos com status: pendentes para envio e cancelados.\nhttps://docs.google.com/spreadsheets/d/1xGBIW1IR7-6KqTsFdrbxTG7RInbxBM4VmntcNQGTQtU/edit?gid=0#gid=0',
+  copy6: 'Analise todos os pedidos em BRSP04 que constam na planilha atualizada e valide quais estão cancelados, pendentes para envio, enviados e/ou já entregues. Especifique quais são os números dos pedidos com status: pendentes para envio e cancelados.\nhttps://docs.google.com/spreadsheets/d/1WatOLWfomu7CMkrIa_UU15zoqB_5Cge5Nf2XDQ5_er4/edit?gid=0#gid=0'
+};
+
+function setupCopy(btnId) {
+  const btn = document.getElementById(btnId);
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(VALIDATION_SCRIPTS[btnId]).then(() => {
+      const original = btn.textContent;
+      btn.textContent = 'Copiado!';
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('done'); }, 1800);
+    });
+  });
+}
+for(let i = 1; i <= 6; i++) {
+  setupCopy('copy' + i);
+}
+
+function checkReportStatuses() {
+  if (!WEB_APP_URL.startsWith('http')) return;
+
+  fetch(WEB_APP_URL + '?action=getReportStatuses')
+    .then(r => r.json())
+    .then(res => {
+      if (res.success && res.statuses) {
+        for (let i = 1; i <= 6; i++) {
+          const info = res.statuses[i];
+          const badge = document.getElementById('statusBadge' + i);
+          if (!badge) continue;
+
+          if (info.status === 'Disponível') {
+            badge.className = 'badge disponivel';
+            badge.textContent = 'Disponível';
+          } else {
+            badge.className = 'badge ocupado';
+            badge.textContent = `Ocupado por ${info.user || 'Alguém'} (${info.minutesAgo}m atrás)`;
+          }
+        }
+      }
+    })
+    .catch(err => console.error('Erro ao buscar status dos reports:', err));
+}
+
+setInterval(checkReportStatuses, 30000);
+checkReportStatuses();
+
+const TRACE_URL_TEMPLATE = 'https://wms.adminml.com/reports/groups/order/XXXXXXXXXXX/trace';
+
+document.getElementById('processOrders').addEventListener('click', () => {
+  const raw = document.getElementById('pasteOrders').value;
+  const matches = raw.match(/\d+/g) || [];
+  const unique = [...new Set(matches)];
+
+  const listEl = document.getElementById('orderList');
+  const countEl = document.getElementById('traceCount');
+  listEl.innerHTML = '';
+
+  if (!unique.length) { countEl.textContent = 'Nenhum número reconhecido.'; return; }
+  countEl.textContent = unique.length + ' pedido(s) reconhecido(s) · abrindo automaticamente…';
+
+  let blocked = 0;
+  unique.forEach((orderId, i) => {
+    const url = TRACE_URL_TEMPLATE.replace('XXXXXXXXXXX', orderId);
+    const win = window.open(url, '_blank', 'noopener');
+    if (!win) blocked++;
+
+    const row = document.createElement('div');
+    row.className = 'order-row';
+    row.innerHTML = `<div class="oid"><span>${String(i + 1).padStart(2, '0')}</span>${orderId}</div>`;
+    const openBtn = document.createElement('button');
+    openBtn.className = 'open-btn';
+    openBtn.textContent = 'Abrir Detalhes';
+    openBtn.addEventListener('click', () => window.open(url, '_blank', 'noopener'));
+    row.appendChild(openBtn);
+    listEl.appendChild(row);
+  });
+
+  countEl.textContent = unique.length + ' pedido(s)' + (blocked > 0 ? ' · ' + blocked + ' bloqueado(s) pelo navegador' : ' · abas abertas');
+});
+
+document.getElementById('clearOrdersBtn').addEventListener('click', () => {
+  document.getElementById('pasteOrders').value = '';
+  document.getElementById('orderList').innerHTML = '';
+  document.getElementById('traceCount').textContent = '';
+});
+
+/* =========================================================
+   MÓDULO: FOUNDS TRATADOS
+========================================================= */
+let psDatabase = [];
+let foundsHistory = [];
+let foundsChart = null;
+let foundsWeekChart = null;
+let foundsMonthChart = null;
+
+function loadPsData() {
+  if (!WEB_APP_URL.startsWith('http')) {
+    document.getElementById('psSelect').innerHTML = '<option value="">API não configurada</option>';
+    return;
+  }
+
+  fetch(WEB_APP_URL + '?action=getPS')
+    .then(r => r.json())
+    .then(res => {
+      const select = document.getElementById('psSelect');
+      const filterPs = document.getElementById('filterPs');
+      const filterTurno = document.getElementById('filterTurno');
+
+      if (res.success && res.ps.length > 0) {
+        psDatabase = res.ps;
+        select.innerHTML = '<option value="">Selecione um PS...</option>';
+        filterPs.innerHTML = '<option value="">Todos os PS</option>';
+        const turnosSet = new Set();
+
+        psDatabase.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.nome;
+          opt.textContent = item.nome;
+          select.appendChild(opt);
+
+          const optF = document.createElement('option');
+          optF.value = item.nome;
+          optF.textContent = item.nome;
+          filterPs.appendChild(optF);
+
+          if (item.turno) turnosSet.add(item.turno);
+        });
+
+        turnosSet.forEach(t => {
+          const optT = document.createElement('option');
+          optT.value = t;
+          optT.textContent = t;
+          filterTurno.appendChild(optT);
+        });
+      } else {
+        select.innerHTML = '<option value="">Nenhum PS encontrado na base</option>';
+      }
+    })
+    .catch(() => {
+      document.getElementById('psSelect').innerHTML = '<option value="">Erro ao carregar PS</option>';
+    });
+}
+
+function loadFoundsHistory() {
+  if (!WEB_APP_URL.startsWith('http')) return;
+
+  fetch(WEB_APP_URL + '?action=getFounds')
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        foundsHistory = res.history;
+        updateDashboard();
+      }
+    })
+    .catch(err => console.error('Erro ao buscar histórico de founds:', err));
+}
+
+loadPsData();
+loadFoundsHistory();
+
+document.getElementById('psSelect').addEventListener('change', (e) => {
+  const selectedName = e.target.value;
+  const turnoInput = document.getElementById('psTurno');
+  if (!selectedName) {
+    turnoInput.value = '';
+    return;
+  }
+  const found = psDatabase.find(p => p.nome === selectedName);
+  turnoInput.value = found ? found.turno : 'N/A';
+});
+
+function setupScanner(inputId, qtdId, msgId, statusText) {
+  const input = document.getElementById(inputId);
+  const qtdInput = document.getElementById(qtdId);
+  const msg = document.getElementById(msgId);
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const sku = input.value.trim();
+      const quantity = parseInt(qtdInput.value) || 1;
+      const psName = document.getElementById('psSelect').value;
+      const psTurno = document.getElementById('psTurno').value;
+
+      if (!psName) {
+        msg.textContent = '⚠️ Selecione o PS Responsável primeiro!';
+        return;
+      }
+      if (!sku) {
+        msg.textContent = '⚠️ MeliSKU inválida.';
+        return;
+      }
+
+      // Limpa imediatamente para sumir da tela na hora
+      input.value = '';
+      qtdInput.value = '1';
+      msg.textContent = `Salvando ${sku}...`;
+
+      const now = new Date().toISOString();
+      const payload = {
+        action: 'saveFound',
+        timestamp: now,
+        meliSku: sku,
+        status: statusText,
+        ps: psName,
+        turno: psTurno || 'N/A',
+        quantity: quantity
+      };
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(payload).toString()
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          msg.textContent = `✓ MeliSKU ${sku} (Qtd: ${quantity}) salva com sucesso!`;
+          setTimeout(() => { msg.textContent = ''; }, 3000);
+          loadFoundsHistory(); 
+        } else {
+          msg.textContent = '⚠️ Erro ao salvar na planilha.';
+        }
+      })
+      .catch(() => {
+        msg.textContent = '⚠️ Erro de conexão com a API.';
+      });
+    }
+  });
+}
+
+setupScanner('scanEnviado', 'qtdEnviado', 'msgEnviado', 'Enviado para Found');
+setupScanner('scanNaoEnviado', 'qtdNaoEnviado', 'msgNaoEnviado', 'Não Enviado para Found');
+
+function getFilteredHistory() {
+  const start = document.getElementById('filterStart').value;
+  const end = document.getElementById('filterEnd').value;
+  const turno = document.getElementById('filterTurno').value;
+  const ps = document.getElementById('filterPs').value;
+
+  return foundsHistory.filter(item => {
+    if (!item.timestamp) return false;
+    const itemDate = item.timestamp.split('T')[0];
+    if (start && itemDate < start) return false;
+    if (end && itemDate > end) return false;
+    if (turno && item.turno !== turno) return false;
+    if (ps && item.ps !== ps) return false;
+    return true;
+  });
+}
+
+function updateDashboard() {
+  const filtered = getFilteredHistory();
+
+  let total = 0;
+  let enviados = 0;
+  let naoEnviados = 0;
+
+  filtered.forEach(item => {
+    const q = item.quantity || 1;
+    total += q;
+    if (item.status === 'Enviado para Found') enviados += q;
+    if (item.status === 'Não Enviado para Found') naoEnviados += q;
+  });
+
+  document.getElementById('kpiTotal').textContent = total;
+  document.getElementById('kpiEnviados').textContent = enviados;
+  document.getElementById('kpiNaoEnviados').textContent = naoEnviados;
+
+  const psStats = {};
+  filtered.forEach(item => {
+    const name = item.ps || 'Desconhecido';
+    const q = item.quantity || 1;
+    if (!psStats[name]) {
+      psStats[name] = { enviados: 0, naoEnviados: 0, total: 0 };
+    }
+    psStats[name].total += q;
+    if (item.status === 'Enviado para Found') {
+      psStats[name].enviados += q;
+    } else if (item.status === 'Não Enviado para Found') {
+      psStats[name].naoEnviados += q;
+    }
+  });
+
+  const psSummaryBody = document.getElementById('psSummaryTableBody');
+  psSummaryBody.innerHTML = '';
+  const psKeys = Object.keys(psStats).sort();
+
+  if (psKeys.length === 0) {
+    psSummaryBody.innerHTML = `<tr><td colspan="4" style="padding: 15px; text-align: center; color: var(--muted); font-family: var(--mono);">Nenhum registro encontrado.</td></tr>`;
+  } else {
+    psKeys.forEach(name => {
+      const stats = psStats[name];
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--line-soft)';
+      tr.innerHTML = `
+        <td style="padding: 9px 10px; font-weight: 500;">${name}</td>
+        <td style="padding: 9px 10px; text-align: center; font-family: var(--mono); color: var(--danger); font-weight: 600;">${stats.enviados}</td>
+        <td style="padding: 9px 10px; text-align: center; font-family: var(--mono); color: var(--green); font-weight: 600;">${stats.naoEnviados}</td>
+        <td style="padding: 9px 10px; text-align: center; font-family: var(--mono); font-weight: 700;">${stats.total}</td>
+      `;
+      psSummaryBody.appendChild(tr);
+    });
+  }
+
+  const tbody = document.getElementById('historyTableBody');
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--muted); font-family: var(--mono);">Nenhum registro encontrado.</td></tr>`;
+  } else {
+    filtered.forEach(item => {
+      let dateFormatted = item.timestamp;
+      try {
+        const dt = new Date(item.timestamp);
+        dateFormatted = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+      } catch(e){}
+
+      const badgeColor = item.status === 'Enviado para Found' ? 'var(--danger)' : 'var(--green)';
+
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--line-soft)';
+      tr.innerHTML = `
+        <td style="padding: 10px 12px; font-family: var(--mono); font-size: 11.5px;">${dateFormatted}</td>
+        <td style="padding: 10px 12px; font-family: var(--mono); font-weight: 500;">${item.meliSku}</td>
+        <td style="padding: 10px 12px;"><span style="color: ${badgeColor}; font-weight: 600; font-family: var(--mono); font-size: 11px;">● ${item.status}</span></td>
+        <td style="padding: 10px 12px;">${item.ps}</td>
+        <td style="padding: 10px 12px; font-family: var(--mono);">${item.turno}</td>
+        <td style="padding: 10px 12px; text-align: center; font-family: var(--mono); font-weight: 600;">${item.quantity || 1}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  updateCharts(filtered);
+}
+
+function updateCharts(filtered) {
+  const countsByDate = {};
+  filtered.forEach(item => {
+    if (!item.timestamp) return;
+    const d = item.timestamp.split('T')[0];
+    const q = item.quantity || 1;
+    countsByDate[d] = (countsByDate[d] || 0) + q;
+  });
+  const sortedDates = Object.keys(countsByDate).sort();
+  const dataDates = sortedDates.map(d => countsByDate[d]);
+  const formattedDates = sortedDates.map(d => {
+    const parts = d.split('-');
+    return parts.length === 3 ? parts[2] + '/' + parts[1] : d;
+  });
+
+  const ctxDay = document.getElementById('chartFounds').getContext('2d');
+  if (foundsChart) foundsChart.destroy();
+  foundsChart = new Chart(ctxDay, {
+    type: 'bar',
+    data: {
+      labels: formattedDates.length ? formattedDates : ['Sem dados'],
+      datasets: [{
+        label: 'Tratativas',
+        data: dataDates.length ? dataDates : [0],
+        backgroundColor: 'rgba(52, 131, 250, 0.7)',
+        borderColor: '#3483fa',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  const countsByWeek = {};
+  filtered.forEach(item => {
+    if (!item.timestamp) return;
+    const dateStr = item.timestamp.split('T')[0];
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    const wkKey = `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    const q = item.quantity || 1;
+    countsByWeek[wkKey] = (countsByWeek[wkKey] || 0) + q;
+  });
+  const sortedWeeks = Object.keys(countsByWeek).sort();
+  const dataWeeks = sortedWeeks.map(w => countsByWeek[w]);
+  const formattedWeeks = sortedWeeks.map(w => {
+    const parts = w.split('-W');
+    return `Semana ${parts[1]}/${parts[0]}`;
+  });
+
+  const ctxWeek = document.getElementById('chartFoundsWeek').getContext('2d');
+  if (foundsWeekChart) foundsWeekChart.destroy();
+  foundsWeekChart = new Chart(ctxWeek, {
+    type: 'bar',
+    data: {
+      labels: formattedWeeks.length ? formattedWeeks : ['Sem dados'],
+      datasets: [{
+        label: 'Tratativas',
+        data: dataWeeks.length ? dataWeeks : [0],
+        backgroundColor: 'rgba(0, 166, 80, 0.7)',
+        borderColor: '#00a650',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  const countsByMonth = {};
+  filtered.forEach(item => {
+    if (!item.timestamp) return;
+    const mk = item.timestamp.substring(0, 7);
+    const q = item.quantity || 1;
+    countsByMonth[mk] = (countsByMonth[mk] || 0) + q;
+  });
+  const sortedMonths = Object.keys(countsByMonth).sort();
+  const dataMonths = sortedMonths.map(m => countsByMonth[m]);
+  const formattedMonths = sortedMonths.map(m => {
+    const parts = m.split('-');
+    return parts.length === 2 ? `${parts[1]}/${parts[0]}` : m;
+  });
+
+  const ctxMonth = document.getElementById('chartFoundsMonth').getContext('2d');
+  if (foundsMonthChart) foundsMonthChart.destroy();
+  foundsMonthChart = new Chart(ctxMonth, {
+    type: 'bar',
+    data: {
+      labels: formattedMonths.length ? formattedMonths : ['Sem dados'],
+      datasets: [{
+        label: 'Tratativas',
+        data: dataMonths.length ? dataMonths : [0],
+        backgroundColor: 'rgba(254, 224, 0, 0.8)',
+        borderColor: '#ccaa00',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+
+['filterStart', 'filterEnd', 'filterTurno', 'filterPs'].forEach(id => {
+  document.getElementById(id).addEventListener('change', updateDashboard);
+});
+
+document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+  document.getElementById('filterStart').value = '';
+  document.getElementById('filterEnd').value = '';
+  document.getElementById('filterTurno').value = '';
+  document.getElementById('filterPs').value = '';
+  updateDashboard();
+});
+
+document.getElementById('exportCsvBtn').addEventListener('click', () => {
+  const filtered = getFilteredHistory();
+  if (!filtered.length) {
+    alert('Nenhum dado para exportar com os filtros atuais.');
+    return;
+  }
+
+  let csv = 'Data/Hora,MeliSKU,Status,PS Responsavel,Turno,Quantidade\n';
+  filtered.forEach(i => {
+    csv += `"${i.timestamp}","${i.meliSku}","${i.status}","${i.ps}","${i.turno}","${i.quantity || 1}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'founds_tratados_' + new Date().toISOString().split('T')[0] + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+});
+</script>
+</body>
+</html>
